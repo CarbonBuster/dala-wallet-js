@@ -20,6 +20,7 @@ class DalaWallet extends EventEmitter {
     /**
      * 
      * @param {Object} options
+     * @param {Web3} options.web3 - Instance of web3 to use
      * @param {string} options.rpcServer - The http url of the RPC server
      * @param {Object} options.sender - The sender
      * @param {string} options.sender.privateKey - The private key of the sender
@@ -32,33 +33,38 @@ class DalaWallet extends EventEmitter {
     constructor(options) {
         super();
         if (!options) throw new Error('options are required');
-        if (!options.rpcServer) throw new Error('options.rpcServer is required');
-        if (!options.sender) throw new Error('options.sender is required');
-        if (!options.sender.privateKey) throw new Error('options.sender.privateKey is required');
-        if (!options.sender.address) throw new Error('options.sender.address is required');
-        if (!ethUtil.isValidAddress(options.sender.address)) throw new Error('options.sender.address is invalid');
-        if (!options.network) throw new Error('options.network is required');
-        if (options.network.toLowerCase() !== 'ropsten' && options.network.toLowerCase() !== 'mainnet') throw new Error('options.network must be one of ropsten | mainnet');
+        let web3;
+        if (!options.web3) {
+            if (!options.rpcServer) throw new Error('options.rpcServer is required');
+            if (!options.sender) throw new Error('options.sender is required');
+            if (!options.sender.privateKey) throw new Error('options.sender.privateKey is required');
+            if (!options.sender.address) throw new Error('options.sender.address is required');
+            if (!ethUtil.isValidAddress(options.sender.address)) throw new Error('options.sender.address is invalid');
+            if (!options.network) throw new Error('options.network is required');
+            if (options.network.toLowerCase() !== 'ropsten' && options.network.toLowerCase() !== 'mainnet') throw new Error('options.network must be one of ropsten | mainnet');
 
-        const engine = new ProviderEngine();
-        engine.addProvider(new FilterSubprovider());
-        engine.addProvider(new HookedWalletEthTxSubprovider({
-            getAccounts: (cb) => {
-                return cb(null, [options.sender.address]);
-            },
-            getPrivateKey: (address, cb) => {
-                if (address === options.sender.address) {
-                    return cb(null, new Buffer(options.sender.privateKey, 'hex'));
+            const engine = new ProviderEngine();
+            engine.addProvider(new FilterSubprovider());
+            engine.addProvider(new HookedWalletEthTxSubprovider({
+                getAccounts: (cb) => {
+                    return cb(null, [options.sender.address]);
+                },
+                getPrivateKey: (address, cb) => {
+                    if (address === options.sender.address) {
+                        return cb(null, new Buffer(options.sender.privateKey, 'hex'));
+                    }
+                    return cb(new Error('invalid address'));
                 }
-                return cb(new Error('invalid address'));
-            }
-        }));
-        engine.addProvider(new Web3Subprovider(new Web3.providers.HttpProvider(options.rpcServer)));
-        engine.on('error', (error) => {
-            this.emit('web3-engine-error', error);
-        });
-        engine.start();
-        const web3 = new Web3(engine);
+            }));
+            engine.addProvider(new Web3Subprovider(new Web3.providers.HttpProvider(options.rpcServer)));
+            engine.on('error', (error) => {
+                this.emit('web3-engine-error', error);
+            });
+            engine.start();
+            web3 = new Web3(engine);
+        }else{
+            web3 = options.web3;
+        }
         this.uraiden = new MicroRaiden(
             web3,
             config[options.network].contractAddress,
