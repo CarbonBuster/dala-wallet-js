@@ -1,0 +1,19 @@
+{
+  "name": "dala-wallet-js",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/GetDala/dala-wallet-js.git",
+  "author": "Ross McEwan <ross@getwala.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@raiden_network/microraiden": "^0.2.0",
+    "bignumber.js": "2.0.7",
+    "ethereumjs-util": "^5.1.4",
+    "request": "^2.83.0",
+    "web3": "0.18.4",
+    "web3-provider-engine": "^13.6.5"
+  },
+  "devDependencies": {
+    "faker": "^4.1.0"
+  }
+}
