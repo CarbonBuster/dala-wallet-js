@@ -1,5 +1,3 @@
-import { secp256k1 } from 'ethereumjs-util';
-
 console.debug = console.log;
 const DalaWallet = require('../src/DalaWallet');
 const faker = require('faker');
