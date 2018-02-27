@@ -86,6 +86,7 @@ class DalaWallet extends EventEmitter {
     }
 
     setupChannel(params) {
+        console.log('calling setupChannel');
         var self = this;
         const {apiKey} = params;
         return this.uraiden.loadChannelFromBlockchain(self.sender, self.receiver).then(channel => {
@@ -108,8 +109,9 @@ class DalaWallet extends EventEmitter {
             return new Promise((resolve, reject) => {
                 request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, { headers:{'x-api-key':apiKey}, json: true }, (error, response, body) => {
                     if (error) return reject(error);
+                    console.log(body);
                     if(response.statusCode >= 300){
-                        return resolve({channel, proof: channel.proof});
+                        return reject(new Error(`${response.statusCode}: ${response.statusMessage}`));
                     }
                     const balance = new BigNumber(body.balance);
                     return self.uraiden.signNewProof({ balance }).then(proof => {
@@ -122,6 +124,7 @@ class DalaWallet extends EventEmitter {
     }
 
     post(path, params, { channel, proof, headers }) {
+        console.log('calling post');
         var self = this;
         return new Promise((resolve, reject) => {
             const method = 'POST';
@@ -151,6 +154,7 @@ class DalaWallet extends EventEmitter {
                         if (errorString.startsWith('Error: Insuficient funds:')) {
                             if (!self.autoTopupEnabled) return reject(error)
                             return self.uraiden.topUpChannel(self.autoTopupAmount).then(() => {
+                                console.log('TOPPED UP');
                                 return self.post.call(self, path, params, { channel, proof });
                             });
                         }
@@ -202,6 +206,7 @@ class DalaWallet extends EventEmitter {
      * @param {string} params.apiKey
      */
     createWallet(params){
+        console.log('calling createwallet');
         var self = this;
         return self.setupChannel(params).then(self.post.bind(self, 'v1/wallets', params));
     }

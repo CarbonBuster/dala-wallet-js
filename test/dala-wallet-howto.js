@@ -28,14 +28,18 @@ const wallet = new DalaWallet({
 wallet.authenticate({
     apiKey: secret.apiKey,
     body: {
-        username: 'bitcoin.cash',
+        username: 'jared.leonard',
         password: 'p@ssw0rd'
     }
 }).then(JSON.parse).then(result => {
+    console.log('authenticated');
     const { IdToken } = result;
     const params = {
         apiKey: secret.apiKey,
-        authorization: IdToken
+        authorization: IdToken,
+        body:{
+            someWalletInfo: 'hello wallet'
+        }
     };
     return wallet.createWallet(params);
 }).then(console.log).catch(console.log);
