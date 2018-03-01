@@ -108,7 +108,9 @@ class DalaWallet extends EventEmitter {
 
         function next(channel) {
             return new Promise((resolve, reject) => {
-                request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, { headers:{'x-api-key':self.apiKey}, json: true }, (error, response, body) => {
+                const opts = { headers:{'x-api-key':self.apiKey}, json: true}
+                console.log(opts);
+                request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, opts, (error, response, body) => {
                     if (error) return reject(error);
                     console.log(body);
                     if(response.statusCode >= 300){

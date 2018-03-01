@@ -10,7 +10,8 @@ const wallet = new DalaWallet({
     autoTopupEnabled: true,
     autoTopupAmount: 50000000000000000000,
     defaultDeposit: 50000000000000000000,
-    baseUrl: secret.networks.ropsten.baseUrl
+    baseUrl: secret.networks.ropsten.baseUrl,
+    apiKey: secret.apiKey
 });
 // wallet.register({
 //     body: {
