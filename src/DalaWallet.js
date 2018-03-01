@@ -64,7 +64,7 @@ class DalaWallet extends EventEmitter {
             });
             engine.start();
             web3 = new Web3(engine);
-        }else{
+        } else {
             web3 = options.web3;
         }
         this.uraiden = new MicroRaiden(
@@ -97,8 +97,8 @@ class DalaWallet extends EventEmitter {
             return self.uraiden.openChannel(self.sender, self.receiver, self.defaultDeposit).then(channel => {
                 return next(channel);
             });
-        }).catch(error=>{
-            if(error == 'Error: No channel found for this account'){
+        }).catch(error => {
+            if (error == 'Error: No channel found for this account') {
                 return self.uraiden.openChannel(self.sender, self.receiver, self.defaultDeposit).then(channel => {
                     return next(channel);
                 });
@@ -108,12 +108,12 @@ class DalaWallet extends EventEmitter {
 
         function next(channel) {
             return new Promise((resolve, reject) => {
-                const opts = { headers:{'x-api-key':self.apiKey}, json: true}
+                const opts = { headers: { 'x-api-key': self.apiKey }, json: true }
                 console.log(opts);
                 request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, opts, (error, response, body) => {
                     if (error) return reject(error);
                     console.log(body);
-                    if(response.statusCode >= 300){
+                    if (response.statusCode >= 300) {
                         return reject(new Error(`${response.statusCode}: ${response.statusMessage}`));
                     }
                     const balance = new BigNumber(body.balance);
@@ -139,30 +139,32 @@ class DalaWallet extends EventEmitter {
             request(`${self.baseUrl}/${path}`, { headers, method, body }, (error, response, body) => {
                 if (error) return reject(error);
                 if (response.statusCode === 402) {
-                    self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']).then(proof => {
-                        self.uraiden.confirmPayment(proof);
-                        headers = Object.assign({}, headers, {
-                            'RDN-Contract-Address': config[self.network].contractAddress,
-                            'RDN-Receiver-Address': self.receiver,
-                            'RDN-Sender-Address': self.sender,
-                            'RDN-Balance-Signature': proof.sig,
-                            'RDN-Open-Block': channel.block.toString(),
-                            'RDN-Balance': proof.balance.toString(),
-                            'RDN-Sender-Balance': proof.balance.toString(),
-                            'RDN-Price': response.headers['rdn-price']
-                        });
-                        return resolve(self.post.call(self, path, params, { channel, proof, headers }));
-                    }).catch(error => {
-                        const errorString = error.toString();
-                        if (errorString.startsWith('Error: Insuficient funds:')) {
-                            if (!self.autoTopupEnabled) return reject(error)
-                            return self.uraiden.topUpChannel(self.autoTopupAmount).then(() => {
-                                console.log('TOPPED UP');
-                                return self.post.call(self, path, params, { channel, proof });
+                    return setupChannel(params).then(({ channel, proof }) => {
+                        self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']).then(proof => {
+                            self.uraiden.confirmPayment(proof);
+                            headers = Object.assign({}, headers, {
+                                'RDN-Contract-Address': config[self.network].contractAddress,
+                                'RDN-Receiver-Address': self.receiver,
+                                'RDN-Sender-Address': self.sender,
+                                'RDN-Balance-Signature': proof.sig,
+                                'RDN-Open-Block': channel.block.toString(),
+                                'RDN-Balance': proof.balance.toString(),
+                                'RDN-Sender-Balance': proof.balance.toString(),
+                                'RDN-Price': response.headers['rdn-price']
                             });
-                        }
-                        return reject(error);
-                    });
+                            return resolve(self.post.call(self, path, params, { channel, proof, headers }));
+                        }).catch(error => {
+                            const errorString = error.toString();
+                            if (errorString.startsWith('Error: Insuficient funds:')) {
+                                if (!self.autoTopupEnabled) return reject(error)
+                                return self.uraiden.topUpChannel(self.autoTopupAmount).then(() => {
+                                    console.log('TOPPED UP');
+                                    return self.post.call(self, path, params, { channel, proof });
+                                });
+                            }
+                            return reject(error);
+                        });
+                    }).catch(reject);
                 } else {
                     return resolve(body);
                 }
@@ -184,7 +186,8 @@ class DalaWallet extends EventEmitter {
      */
     register(params) {
         var self = this;
-        return self.setupChannel(params).then(self.post.bind(self, 'v1/users', params));
+        return self.post('v1/users', params, {});
+        // return self.setupChannel(params).then(self.post.bind(self, 'v1/users', params));
     }
 
     /**
@@ -197,7 +200,8 @@ class DalaWallet extends EventEmitter {
      */
     authenticate(params) {
         var self = this;
-        return self.setupChannel(params).then(self.post.bind(self, 'v1/authentications', params));
+        return self.post('v1/authentications', params, {});
+        // return self.setupChannel(params).then(self.post.bind(self, 'v1/authentications', params));
     }
 
     /**
@@ -205,19 +209,22 @@ class DalaWallet extends EventEmitter {
      * @param {Object} params 
      * @param {string} params.authorization
      */
-    createWallet(params){
+    createWallet(params) {
         var self = this;
-        return self.setupChannel(params).then(self.post.bind(self, 'v1/wallets', params));
+        return self.post('v1/wallets', params, {});
+        // return self.setupChannel(params).then(self.post.bind(self, 'v1/wallets', params));
     }
 
-    internalTransfer(params){
+    internalTransfer(params) {
         var self = this;
-        return self.setupChannel(params).then(self.post.bind(self, 'v1/internal-transfers', params));
+        return self.post('v1/internal-transfers', params, {});
+        // return self.setupChannel(params).then(self.post.bind(self, 'v1/internal-transfers', params));
     }
 
-    externalTransfer(params){
+    externalTransfer(params) {
         var self = this;
-        return self.setupChannel(params).then(self.post.bind(self, 'v1/external-transfers', params));
+        return self.post('v1/external-transfers', params, {});
+        // return self.setupChannel(params).then(self.post.bind(self, 'v1/external-transfers', params));
     }
 }
 
