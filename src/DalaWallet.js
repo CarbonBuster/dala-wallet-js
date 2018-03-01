@@ -30,6 +30,7 @@ class DalaWallet extends EventEmitter {
      * @param {string} options.autoTopupAmount - Auto topup amount - if autoTopupEnabled is true then this is required
      * @param {string} options.defaultDeposit - The default deposit amount when opening a channel
      * @param {string} options.baseUrl - The base url to use 
+     * @param {string} options.apiKey - The API Key
      */
     constructor(options) {
         super();
@@ -73,6 +74,7 @@ class DalaWallet extends EventEmitter {
             config[options.network].tokenAddress,
             config[options.network].tokenAbi
         );
+        this.apiKey = options.apiKey;
         this.sender = options.sender.address;
         this.receiver = config[options.network].receiver;
         this.baseUrl = options.baseUrl;
@@ -88,7 +90,6 @@ class DalaWallet extends EventEmitter {
     setupChannel(params) {
         console.log('calling setupChannel');
         var self = this;
-        const {apiKey} = params;
         return this.uraiden.loadChannelFromBlockchain(self.sender, self.receiver).then(channel => {
             if (self.uraiden.isChannelValid(channel)) {
                 return next(channel);
@@ -107,7 +108,7 @@ class DalaWallet extends EventEmitter {
 
         function next(channel) {
             return new Promise((resolve, reject) => {
-                request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, { headers:{'x-api-key':apiKey}, json: true }, (error, response, body) => {
+                request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, { headers:{'x-api-key':this.apiKey}, json: true }, (error, response, body) => {
                     if (error) return reject(error);
                     console.log(body);
                     if(response.statusCode >= 300){
@@ -132,7 +133,7 @@ class DalaWallet extends EventEmitter {
             headers = headers || {};
             headers['content-type'] = 'application/json';
             headers['Authorization'] = params.authorization;
-            headers['x-api-key'] = params.apiKey;
+            headers['x-api-key'] = this.apiKey;
             request(`${self.baseUrl}/${path}`, { headers, method, body }, (error, response, body) => {
                 if (error) return reject(error);
                 if (response.statusCode === 402) {
@@ -176,7 +177,6 @@ class DalaWallet extends EventEmitter {
      * @param {string} params.body.password The password
      * @param {string} params.body.phoneNumber  The phone number of the user - if provided must be in E164 format
      * @param {string} params.body.email    The email of the user
-     * @param {string} params.apiKey    Your API key
      * 
      * @returns {Promise} 
      */
@@ -188,9 +188,8 @@ class DalaWallet extends EventEmitter {
     /**
      * Authenticate an existing user
      * @param {Object} params
-     * @param {String} params.username The username
-     * @param {String} params.password The password
-     * @param {string} params.apiKey    Your API key
+     * @param {String} params.body.username The username
+     * @param {String} params.body.password The password
      * 
      * @returns {Promise}
      */
@@ -203,7 +202,6 @@ class DalaWallet extends EventEmitter {
      * Create a wallet
      * @param {Object} params 
      * @param {string} params.authorization
-     * @param {string} params.apiKey
      */
     createWallet(params){
         var self = this;
