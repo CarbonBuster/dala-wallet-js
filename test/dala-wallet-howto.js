@@ -15,6 +15,8 @@ const wallet = new DalaWallet({
 });
 wallet.register({
     body: {
+        firstName: faker.name.firstName(),
+        surname: faker.name.lastName(),
         username: faker.internet.userName(),
         password: faker.internet.password(),
         phoneNumber: '+27123456789',
