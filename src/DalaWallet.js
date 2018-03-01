@@ -206,9 +206,18 @@ class DalaWallet extends EventEmitter {
      * @param {string} params.apiKey
      */
     createWallet(params){
-        console.log('calling createwallet');
         var self = this;
         return self.setupChannel(params).then(self.post.bind(self, 'v1/wallets', params));
+    }
+
+    internalTransfer(params){
+        var self = this;
+        return self.setupChannel(params).then(self.post.bind(self, 'v1/internal-transfers', params));
+    }
+
+    externalTransfer(params){
+        var self = this;
+        return self.setupChannel(params).then(self.post.bind(self, 'v1/external-transfers', params));
     }
 }
 
