@@ -168,7 +168,7 @@ class DalaWallet extends EventEmitter {
                     if(response.statusCode >= 300){
                         return reject(body);
                     }
-                    return resolve(body);
+                    return resolve(JSON.parse(body));
                 }
             });
         });
