@@ -127,7 +127,6 @@ class DalaWallet extends EventEmitter {
     }
 
     post(path, params, { channel, proof, headers }) {
-        console.log('calling post');
         var self = this;
         return new Promise((resolve, reject) => {
             const method = 'POST';
@@ -166,6 +165,9 @@ class DalaWallet extends EventEmitter {
                         });
                     }).catch(reject);
                 } else {
+                    if(response.statusCode >= 300){
+                        return reject(body);
+                    }
                     return resolve(body);
                 }
             });

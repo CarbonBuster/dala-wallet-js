@@ -19,7 +19,7 @@ wallet.register({
         surname: faker.name.lastName(),
         username: faker.internet.userName(),
         password: faker.internet.password(),
-        phoneNumber: '+27123456789',
+        phoneNumber: '+27103131101',
         email: faker.internet.email()
     },
     apiKey: secret.apiKey
