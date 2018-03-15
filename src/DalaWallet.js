@@ -88,7 +88,6 @@ class DalaWallet extends EventEmitter {
     }
 
     setupChannel(params) {
-        console.log('calling setupChannel');
         var self = this;
         return this.uraiden.loadChannelFromBlockchain(self.sender, self.receiver).then(channel => {
             if (self.uraiden.isChannelValid(channel)) {
@@ -109,10 +108,8 @@ class DalaWallet extends EventEmitter {
         function next(channel) {
             return new Promise((resolve, reject) => {
                 const opts = { headers: { 'x-api-key': self.apiKey }, json: true }
-                console.log(opts);
                 request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, opts, (error, response, body) => {
                     if (error) return reject(error);
-                    console.log(body);
                     if (response.statusCode >= 300) {
                         return reject(new Error(`${response.statusCode}: ${response.statusMessage}`));
                     }
@@ -138,7 +135,7 @@ class DalaWallet extends EventEmitter {
             request(`${self.baseUrl}/${path}`, { headers, method, body }, (error, response, body) => {
                 if (error) return reject(error);
                 if (response.statusCode === 402) {
-                    return setupChannel(params).then(({ channel, proof }) => {
+                    return self.setupChannel(params).then(({ channel, proof }) => {
                         self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']).then(proof => {
                             self.uraiden.confirmPayment(proof);
                             headers = Object.assign({}, headers, {
@@ -157,7 +154,6 @@ class DalaWallet extends EventEmitter {
                             if (errorString.startsWith('Error: Insuficient funds:')) {
                                 if (!self.autoTopupEnabled) return reject(error)
                                 return self.uraiden.topUpChannel(self.autoTopupAmount).then(() => {
-                                    console.log('TOPPED UP');
                                     return self.post.call(self, path, params, { channel, proof });
                                 });
                             }
@@ -165,7 +161,7 @@ class DalaWallet extends EventEmitter {
                         });
                     }).catch(reject);
                 } else {
-                    if(response.statusCode >= 300){
+                    if (response.statusCode >= 300) {
                         return reject(body);
                     }
                     return resolve(JSON.parse(body));
