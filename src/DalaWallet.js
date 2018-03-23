@@ -230,7 +230,6 @@ class DalaWallet extends EventEmitter {
   authenticate(params) {
     var self = this;
     return self.post('v1/authentications', params, {});
-    // return self.setupChannel(params).then(self.post.bind(self, 'v1/authentications', params));
   }
 
   /**
@@ -241,19 +240,16 @@ class DalaWallet extends EventEmitter {
   createWallet(params) {
     var self = this;
     return self.post('v1/wallets', params, {});
-    // return self.setupChannel(params).then(self.post.bind(self, 'v1/wallets', params));
   }
 
   internalTransfer(params) {
     var self = this;
     return self.post('v1/internal-transfers', params, {});
-    // return self.setupChannel(params).then(self.post.bind(self, 'v1/internal-transfers', params));
   }
 
   externalTransfer(params) {
     var self = this;
     return self.post('v1/external-transfers', params, {});
-    // return self.setupChannel(params).then(self.post.bind(self, 'v1/external-transfers', params));
   }
 
   close() {
