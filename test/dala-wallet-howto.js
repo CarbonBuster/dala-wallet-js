@@ -19,7 +19,7 @@ const wallet = new DalaWallet({
   apiKey: secret.apiKey
 });
 
-return wallet.settle();
+// return wallet.settle();
 // return wallet
 //   .close()
 //   .then(console.log)
@@ -48,8 +48,8 @@ wallet
   .authenticate({
     apiKey: secret.apiKey,
     body: {
-      username: 'Shanon_Hudson',
-      password: 'x9elfqmp5luGt7c'
+      username: 'Tyrell.Williamson',
+      password: '3Ohl6IJzJLgOwtV'
     }
   })
   .then(result => {

@@ -104,6 +104,7 @@ class DalaWallet extends EventEmitter {
     return self
       .loadChannel()
       .then(channel => {
+        console.log('channel', channel);
         if (self.uraiden.isChannelValid(channel)) {
           return next(channel);
         }
@@ -112,7 +113,7 @@ class DalaWallet extends EventEmitter {
         });
       })
       .catch(error => {
-        if (error == 'Error: No channel found for this account') {
+        if (error == 'Error: No channel found for this account' || error == 'Error: No open and valid channels found from 0') {
           return self.uraiden.openChannel(self.sender, self.receiver, self.defaultDeposit).then(channel => {
             return next(channel);
           });
@@ -238,6 +239,7 @@ class DalaWallet extends EventEmitter {
    * @param {string} params.authorization
    */
   createWallet(params) {
+    console.log('create wallet');
     var self = this;
     return self.post('v1/wallets', params, {});
   }

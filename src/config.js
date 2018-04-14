@@ -2,6 +2,7 @@
 
 module.exports = {
     ropsten: {
+        //receiver: '0x285E74aEb7e95E787BA5778E9229c9650ECF770A',
         receiver: '0xD8b92F7DEbb6AD8f20EA6f6130Bf513936954cAC',
         contractAddress: '0x1644b3ec3bdee95f31d8d5c9ef82d0f45dfa314d',
         contractAbi: [
