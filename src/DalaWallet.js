@@ -127,7 +127,6 @@ class DalaWallet extends EventEmitter {
         request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, opts, (error, response, body) => {
           if (error) return reject(error);
           if (response.statusCode >= 300) {
-            console.log(response);
             return reject(new Error(`${response.statusCode}: ${response.statusMessage}`));
           }
           const balance = new BigNumber(body.balance);
