@@ -1,7 +1,7 @@
 console.debug = console.log;
 const DalaWallet = require('../src/DalaWallet');
 const faker = require('faker');
-const secret = require('../secret');
+const secret = require('../secret')[process.env.STAGE || 'sandbox'];
 
 if (typeof localStorage === 'undefined' || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
@@ -11,7 +11,7 @@ if (typeof localStorage === 'undefined' || localStorage === null) {
 const wallet = new DalaWallet({
   rpcServer: secret.rpcServer,
   sender: secret.sender,
-  network: 'ropsten',
+  network: process.env.STAGE || 'sandbox',
   autoTopupEnabled: true,
   autoTopupAmount: 50000000000000000000,
   defaultDeposit: 50000000000000000000,

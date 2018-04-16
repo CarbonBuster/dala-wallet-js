@@ -43,8 +43,8 @@ class DalaWallet extends EventEmitter {
       if (!options.sender.address) throw new Error('options.sender.address is required');
       if (!ethUtil.isValidAddress(options.sender.address)) throw new Error('options.sender.address is invalid');
       if (!options.network) throw new Error('options.network is required');
-      if (options.network.toLowerCase() !== 'ropsten' && options.network.toLowerCase() !== 'mainnet')
-        throw new Error('options.network must be one of ropsten | mainnet');
+      if (options.network.toLowerCase() !== 'sandbox' && options.network.toLowerCase() !== 'ropsten' && options.network.toLowerCase() !== 'mainnet')
+        throw new Error('options.network must be one of sandbox | ropsten | mainnet');
 
       const engine = new ProviderEngine();
       engine.addProvider(new FilterSubprovider());
@@ -150,6 +150,7 @@ class DalaWallet extends EventEmitter {
       headers['x-api-key'] = self.apiKey;
       request(`${self.baseUrl}/${path}`, { headers, method, body }, (error, response, body) => {
         if (error) return reject(error);
+        console.log('statusCode', response.statusCode);
         if (response.statusCode === 402) {
           return self
             .setupChannel(params)
