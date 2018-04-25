@@ -142,6 +142,7 @@ class DalaWallet extends EventEmitter {
   }
 
   post(path, params, { channel, proof, headers }) {
+    console.log('POST');
     var self = this;
     return new Promise((resolve, reject) => {
       const method = 'POST';
@@ -157,7 +158,7 @@ class DalaWallet extends EventEmitter {
           return self
             .setupChannel(params)
             .then(({ channel, proof }) => {
-              self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']).then(proof => {
+              return self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']).then(proof => {
                 self.uraiden.confirmPayment(proof);
                 headers = Object.assign({}, headers, {
                   'RDN-Contract-Address': config[self.network].contractAddress,
