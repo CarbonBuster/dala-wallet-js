@@ -2,7 +2,7 @@
 
 module.exports = {
     sandbox: {
-        receiver: '0xD8b92F7DEbb6AD8f20EA6f6130Bf513936954cAC',
+        receiver: '0xd8b92f7debb6ad8f20ea6f6130bf513936954cac',
         contractAddress: '0x1644b3ec3bdee95f31d8d5c9ef82d0f45dfa314d',
         contractAbi: [
             {
