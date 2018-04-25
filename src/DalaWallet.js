@@ -137,6 +137,7 @@ class DalaWallet extends EventEmitter {
   async post(path, params, { channel, proof, headers }) {
     console.log('POST');
     let self = this;
+    console.log('self', self);
     const method = 'POST';
     const pbody = JSON.stringify(params.body);
     headers = headers || {};
@@ -161,13 +162,13 @@ class DalaWallet extends EventEmitter {
           'RDN-Sender-Balance': proof.balance.toString(),
           'RDN-Price': response.headers['rdn-price']
         });
-        return await self.post(path, params, { channel, proof, headers });
+        return await self.post.call(self, path, params, { channel, proof, headers });
       } catch (error) {
         let errorString = error.toString();
         if (errorString.startsWith('Error: Insuficient funds:')) {
           if (!self.autoTopupEnabled) throw error;
           await self.uraiden.topUpChannel(self.autoTopupAmount);
-          return await self.post(path, params, { channel, proof });
+          return await self.post.call(self, path, params, { channel, proof });
         } else {
           throw error;
         }
