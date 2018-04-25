@@ -90,136 +90,92 @@ class DalaWallet extends EventEmitter {
     }
   }
 
-  loadChannel() {
+  async loadChannel() {
     var self = this;
     if (self.uraiden.loadStoredChannel(self.sender, self.receiver)) {
-      return Promise.resolve(self.uraiden.channel);
+      return self.uraiden.channel;
     } else {
-      return self.uraiden.loadChannelFromBlockchain(self.sender, self.receiver);
+      return await self.uraiden.loadChannelFromBlockchain(self.sender, self.receiver);
     }
   }
 
-  setupChannel(params) {
-    var self = this;
-    return self
-      .loadChannel()
-      .then(channel => {
-        console.log('loaded channel', channel);
-        if (self.uraiden.isChannelValid(channel)) {
-          return next(channel);
-        }
-        return self.uraiden.openChannel(self.sender, self.receiver, self.defaultDeposit).then(channel => {
-          return next(channel);
-        });
-      })
-      .catch(error => {
-        if (error == 'Error: No channel found for this account' || error == 'Error: No open and valid channels found from 0') {
-          return self.uraiden.openChannel(self.sender, self.receiver, self.defaultDeposit).then(channel => {
-            return next(channel);
-          });
-        }
-        throw error;
-      });
-
-    function next(channel) {
-      return new Promise((resolve, reject) => {
-        const opts = { headers: { 'x-api-key': self.apiKey }, json: true };
-        request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, opts, (error, response, body) => {
-          if (error) return reject(error);
-          console.log('2.body', body);
-          console.log('2.statusCode', response.statusCode);
-          if (response.statusCode >= 300) {
-            return reject(new Error(`${response.statusCode}: ${response.statusMessage}`));
-          }
-          const balance = new BigNumber(body.balance);
-          return self.uraiden.signNewProof({ balance }).then(proof => {
-            console.log('signed new proof');
-            self.uraiden.confirmPayment(proof);
-            console.log('confirmed payment');
-            return resolve({ channel, proof });
-          });
-        });
-      });
-    }
-  }
-
-  post(path, params, { channel, proof, headers }) {
-    console.log('POST');
-    var self = this;
+  request(path, opts) {
     return new Promise((resolve, reject) => {
-      const method = 'POST';
-      const body = JSON.stringify(params.body);
-      headers = headers || {};
-      headers['content-type'] = 'application/json';
-      headers['Authorization'] = params.authorization;
-      headers['x-api-key'] = self.apiKey;
-      request(`${self.baseUrl}/${path}`, { headers, method, body }, (error, response, body) => {
+      request(path, opts, (error, response, body) => {
         if (error) return reject(error);
-        console.log('1.body', body);
-        console.log('1.statusCode', response.statusCode);
-        if (response.statusCode === 402) {
-          return self
-            .setupChannel(params)
-            .then(({ channel, proof }) => {
-              console.log('have setup channel');
-              console.log('self.uraiden.incrementBalanceAndSign', self.uraiden.incrementBalanceAndSign);
-              console.log('rdn-price', response.headers['rdn-price']);
-              return self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']).then(proof => {
-                console.log('have incrementBalanceAndSignProof', proof);
-                return { channel, proof };
-              });
-            })
-            .then(({ channel, proof }) => {
-              console.log('have incremented balance and signed');
-              self.uraiden.confirmPayment(proof);
-              console.log('have confirmed payment');
-              headers = Object.assign({}, headers, {
-                'RDN-Contract-Address': config[self.network].contractAddress,
-                'RDN-Receiver-Address': self.receiver,
-                'RDN-Sender-Address': self.sender,
-                'RDN-Balance-Signature': proof.sig,
-                'RDN-Open-Block': channel.block.toString(),
-                'RDN-Balance': proof.balance.toString(),
-                'RDN-Sender-Balance': proof.balance.toString(),
-                'RDN-Price': response.headers['rdn-price']
-              });
-              console.log('created headers', headers);
-              return { channel, proof, headers };
-            })
-            .then(({ channel, proof, headers }) => {
-              console.log('calling post() again');
-              return self.post.call(self, path, params, {
-                channel,
-                proof,
-                headers
-              });
-            })
-            .then(result => {
-              console.log('last resolve has been called');
-              return resolve(result);
-            })
-            .catch(error => {
-              const errorString = error.toString();
-              if (errorString.startsWith('Error: Insuficient funds:')) {
-                if (!self.autoTopupEnabled) return reject(error);
-                return self.uraiden.topUpChannel(self.autoTopupAmount).then(() => {
-                  return self.post.call(self, path, params, {
-                    channel,
-                    proof
-                  });
-                });
-              }
-              return reject(error);
-            });
-        } else {
-          console.log('in else');
-          if (response.statusCode >= 300) {
-            return reject(body);
-          }
-          return resolve(JSON.parse(body));
-        }
+        resolve({ response, body });
       });
     });
+  }
+
+  async setupChannel(params) {
+    var self = this;
+    let channel;
+    try {
+      channel = await self.loadChannel();
+      if (!self.uraiden.isChannelValid(channel)) {
+        channel = await self.uraiden.openChannel(self.sender, self.receiver, self.defaultDeposit);
+      }
+    } catch (error) {
+      if (error == 'Error: No channel found for this account' || error == 'Error: No open and valid channels found from 0') {
+        channel = await self.uraiden.openChannel(self.sender, self.receiver, self.defaultDeposit);
+      } else {
+        throw error;
+      }
+    }
+    const opts = { headers: { 'x-api-key': self.apiKey }, json: true };
+    let { response, body } = await self.request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, opts);
+    if (response.statusCode >= 300) {
+      throw new Error(`${response.statusCode}: ${response.statusMessage}`);
+    }
+    let balance = new BigNumber(body.balance);
+    let proof = await self.uraiden.signNewProof({ balance });
+    self.uraiden.confirmPayment(proof);
+    return { channel, proof };
+  }
+
+  async post(path, params, { channel, proof, headers }) {
+    console.log('POST');
+    let self = this;
+    const method = 'POST';
+    const pbody = JSON.stringify(params.body);
+    headers = headers || {};
+    headers['content-type'] = 'application/json';
+    headers['Authorization'] = params.authorization;
+    headers['x-api-key'] = self.apiKey;
+    let { response, body } = await self.request(`${self.baseUrl}/${path}`, { headers, method, body: pbody });
+    console.log('1.body', body);
+    console.log('1.statusCode', response.statusCode);
+    if (response.statusCode === 402) {
+      try {
+        let { channel } = await self.setupChannel(params);
+        let proof = await self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']);
+        self.uraiden.confirmPayment(proof);
+        headers = Object.assign({}, headers, {
+          'RDN-Contract-Address': config[self.network].contractAddress,
+          'RDN-Receiver-Address': self.receiver,
+          'RDN-Sender-Address': self.sender,
+          'RDN-Balance-Signature': proof.sig,
+          'RDN-Open-Block': channel.block.toString(),
+          'RDN-Balance': proof.balance.toString(),
+          'RDN-Sender-Balance': proof.balance.toString(),
+          'RDN-Price': response.headers['rdn-price']
+        });
+        return await self.post(path, params, { channel, proof, headers });
+      } catch (error) {
+        let errorString = error.toString();
+        if (errorString.startsWith('Error: Insuficient funds:')) {
+          if (!self.autoTopupEnabled) throw error;
+          await self.uraiden.topUpChannel(self.autoTopupAmount);
+          return await self.post(path, params, { channel, proof });
+        } else {
+          throw error;
+        }
+      }
+    } else {
+      if (response.statusCode >= 300) throw new Error(body);
+      return JSON.parse(body);
+    }
   }
 
   /**
@@ -234,9 +190,9 @@ class DalaWallet extends EventEmitter {
    *
    * @returns {Promise}
    */
-  register(params) {
+  async register(params) {
     var self = this;
-    return self.post('v1/users', params, {});
+    return await self.post('v1/users', params, {});
     // return self.setupChannel(params).then(self.post.bind(self, 'v1/users', params));
   }
 
@@ -248,9 +204,9 @@ class DalaWallet extends EventEmitter {
    *
    * @returns {Promise}
    */
-  authenticate(params) {
+  async authenticate(params) {
     var self = this;
-    return self.post('v1/authentications', params, {});
+    return await self.post('v1/authentications', params, {});
   }
 
   /**
@@ -258,30 +214,32 @@ class DalaWallet extends EventEmitter {
    * @param {Object} params
    * @param {string} params.authorization
    */
-  createWallet(params) {
+  async createWallet(params) {
     console.log('create wallet');
     var self = this;
-    return self.post('v1/wallets', params, {});
+    return await self.post('v1/wallets', params, {});
   }
 
-  internalTransfer(params) {
+  async internalTransfer(params) {
     var self = this;
-    return self.post('v1/internal-transfers', params, {});
+    return await self.post('v1/internal-transfers', params, {});
   }
 
-  externalTransfer(params) {
+  async externalTransfer(params) {
     var self = this;
-    return self.post('v1/external-transfers', params, {});
+    return await self.post('v1/external-transfers', params, {});
   }
 
-  close() {
+  async close() {
     var self = this;
-    return self.loadChannel().then(() => self.uraiden.closeChannel());
+    await self.loadChannel();
+    return await self.uraiden.closeChannel();
   }
 
-  settle() {
+  async settle() {
     var self = this;
-    return self.loadChannel().then(() => self.uraiden.settleChannel());
+    await self.loadChannel();
+    return await self.uraiden.settleChannel();
   }
 }
 
