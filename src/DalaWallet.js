@@ -163,29 +163,35 @@ class DalaWallet extends EventEmitter {
             .then(({ channel, proof }) => {
               console.log('have setup channel');
               return self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']).then(proof => {
-                console.log('have incremented balance and signed');
-                self.uraiden.confirmPayment(proof);
-                console.log('have confirmed payment');
-                headers = Object.assign({}, headers, {
-                  'RDN-Contract-Address': config[self.network].contractAddress,
-                  'RDN-Receiver-Address': self.receiver,
-                  'RDN-Sender-Address': self.sender,
-                  'RDN-Balance-Signature': proof.sig,
-                  'RDN-Open-Block': channel.block.toString(),
-                  'RDN-Balance': proof.balance.toString(),
-                  'RDN-Sender-Balance': proof.balance.toString(),
-                  'RDN-Price': response.headers['rdn-price']
-                });
-                console.log('created headers', headers);
-                console.log('calling post() again');
-                return self.post.call(self, path, params, {
-                  channel,
-                  proof,
-                  headers
-                });
+                return { channel, proof };
               });
             })
-            .then(result=>{
+            .then(({ channel, proof }) => {
+              console.log('have incremented balance and signed');
+              self.uraiden.confirmPayment(proof);
+              console.log('have confirmed payment');
+              headers = Object.assign({}, headers, {
+                'RDN-Contract-Address': config[self.network].contractAddress,
+                'RDN-Receiver-Address': self.receiver,
+                'RDN-Sender-Address': self.sender,
+                'RDN-Balance-Signature': proof.sig,
+                'RDN-Open-Block': channel.block.toString(),
+                'RDN-Balance': proof.balance.toString(),
+                'RDN-Sender-Balance': proof.balance.toString(),
+                'RDN-Price': response.headers['rdn-price']
+              });
+              console.log('created headers', headers);
+              console.log('calling post() again');
+              return { channel, proof, headers };
+            })
+            .then(({ channel, proof, headers }) => {
+              return self.post.call(self, path, params, {
+                channel,
+                proof,
+                headers
+              });
+            })
+            .then(result => {
               console.log('last resolve has been called');
               return resolve(result);
             })

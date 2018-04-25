@@ -70,5 +70,8 @@ wallet
     // };
     // return wallet.internalTransfer(params);
   })
-  .then(console.log)
+  .then(result=>{
+    console.log('========= DONE ==========');
+    console.log(result);
+  })
   .catch(console.log);
