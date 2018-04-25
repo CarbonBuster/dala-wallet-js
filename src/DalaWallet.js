@@ -109,35 +109,45 @@ class DalaWallet extends EventEmitter {
   }
 
   async setupChannel(params) {
+    console.log('setupChannel');
     var self = this;
     let channel;
     try {
       channel = await self.loadChannel();
+      console.log('loaded channel');
       if (!self.uraiden.isChannelValid(channel)) {
+        console.log('channel not valid. Calling openChannel');
         channel = await self.uraiden.openChannel(self.sender, self.receiver, self.defaultDeposit);
       }
     } catch (error) {
+      console.log('error', error);
       if (error == 'Error: No channel found for this account' || error == 'Error: No open and valid channels found from 0') {
+        console.log('Calling openChannel');
         channel = await self.uraiden.openChannel(self.sender, self.receiver, self.defaultDeposit);
       } else {
+        console.log('throwing error');
         throw error;
       }
     }
     const opts = { headers: { 'x-api-key': self.apiKey }, json: true };
+    console.log('calling get');
     let { response, body } = await self.request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, opts);
     if (response.statusCode >= 300) {
+      console.log('error occurred');
       throw new Error(`${response.statusCode}: ${response.statusMessage}`);
     }
     let balance = new BigNumber(body.balance);
+    console.log('have balance');
     let proof = await self.uraiden.signNewProof({ balance });
+    console.log('signed new proof');
     self.uraiden.confirmPayment(proof);
+    console.log('confirmed payment');
     return { channel, proof };
   }
 
   async post(path, params, { channel, proof, headers }) {
     console.log('POST');
     let self = this;
-    console.log('self', self);
     const method = 'POST';
     const pbody = JSON.stringify(params.body);
     headers = headers || {};
@@ -148,10 +158,14 @@ class DalaWallet extends EventEmitter {
     console.log('1.body', body);
     console.log('1.statusCode', response.statusCode);
     if (response.statusCode === 402) {
+      console.log('payment required');
       try {
         let { channel } = await self.setupChannel(params);
+        console.log('have channel. calling incrementBalanceAndSign');
         let proof = await self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']);
+        console.log('have proof. confirming payment');
         self.uraiden.confirmPayment(proof);
+        console.log('payment confirmed');
         headers = Object.assign({}, headers, {
           'RDN-Contract-Address': config[self.network].contractAddress,
           'RDN-Receiver-Address': self.receiver,
@@ -162,18 +176,25 @@ class DalaWallet extends EventEmitter {
           'RDN-Sender-Balance': proof.balance.toString(),
           'RDN-Price': response.headers['rdn-price']
         });
+        console.log('recalling post');
         return await self.post.call(self, path, params, { channel, proof, headers });
       } catch (error) {
+        console.log('error', error);
         let errorString = error.toString();
         if (errorString.startsWith('Error: Insuficient funds:')) {
+          console.log('insufficient funds');
           if (!self.autoTopupEnabled) throw error;
+          console.log('topping up channel');
           await self.uraiden.topUpChannel(self.autoTopupAmount);
+          console.log('recalling post');
           return await self.post.call(self, path, params, { channel, proof });
         } else {
+          console.log('throwing error');
           throw error;
         }
       }
     } else {
+      console.log('all good');
       if (response.statusCode >= 300) throw new Error(body);
       return JSON.parse(body);
     }
