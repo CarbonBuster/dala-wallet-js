@@ -1,13 +1,15 @@
 console.debug = console.log;
 const DalaWallet = require('../src/DalaWallet');
 const faker = require('faker');
+const uuid = require('uuid');
+const fs = require('fs');
 const secret = require('../secret')[process.env.STAGE || 'sandbox'];
 
 if (typeof localStorage === 'undefined' || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
   localStorage = new LocalStorage('./scratch');
 }
-
+console.log('creating ');
 const wallet = new DalaWallet({
   rpcServer: secret.rpcServer,
   sender: secret.sender,
@@ -15,10 +17,9 @@ const wallet = new DalaWallet({
   autoTopupEnabled: true,
   autoTopupAmount: 50000000000000000000,
   defaultDeposit: 50000000000000000000,
-  baseUrl: secret.networks.ropsten.baseUrl,
+  baseUrl: secret.baseUrl,
   apiKey: secret.apiKey
 });
-
 // return wallet.settle();
 // return wallet
 //   .close()
@@ -37,30 +38,37 @@ const wallet = new DalaWallet({
 // };
 // console.log(body);
 // wallet.register({
-//     body,
-//     apiKey: secret.apiKey
+//     body
 // }).then(result=>{
 //     console.log('result', result);
 // }).catch(error=>{
 //     console.log('error', error);
 // });
+const payload = {
+  body: secret.accounts.walaRewards
+};
+console.log(payload);
 wallet
-  .authenticate({
-    apiKey: secret.apiKey,
-    body: {
-      username: 'Tyrell.Williamson',
-      password: '3Ohl6IJzJLgOwtV'
-    }
-  })
+  .authenticate(payload)
   .then(result => {
     console.log('authenticated');
     const { IdToken } = result;
-    const params = {
-      apiKey: secret.apiKey,
+    return wallet.createWallet({
       authorization: IdToken,
-      body: {}
-    };
-    return wallet.createWallet(params);
+      body: {
+        from: secret.accounts.walaPooled.address
+      }
+    });
+    // const params = {
+    //   authorization: IdToken,
+    //   body: {
+    //       from: secret.accounts.walaPooled.address,
+    //       to: '0xe807b31ac4399925cb4529f514533abafbd6bfb1',//secret.accounts.walaPooled.address,
+    //       amount: '135.135135',
+    //       description: 'Apr-23 Deposit'
+    //   }
+    // };
+    // return wallet.internalTransfer(params);
   })
   .then(console.log)
   .catch(console.log);
