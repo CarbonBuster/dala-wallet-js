@@ -104,7 +104,7 @@ class DalaWallet extends EventEmitter {
     return self
       .loadChannel()
       .then(channel => {
-        console.log('channel', channel);
+        console.log('loaded channel', channel);
         if (self.uraiden.isChannelValid(channel)) {
           return next(channel);
         }
@@ -126,14 +126,16 @@ class DalaWallet extends EventEmitter {
         const opts = { headers: { 'x-api-key': self.apiKey }, json: true };
         request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, opts, (error, response, body) => {
           if (error) return reject(error);
-          console.log('body', body);
-          console.log('statusCode', response.statusCode);
+          console.log('2.body', body);
+          console.log('2.statusCode', response.statusCode);
           if (response.statusCode >= 300) {
             return reject(new Error(`${response.statusCode}: ${response.statusMessage}`));
           }
           const balance = new BigNumber(body.balance);
           return self.uraiden.signNewProof({ balance }).then(proof => {
+            console.log('signed new proof');
             self.uraiden.confirmPayment(proof);
+            console.log('confirmed payment');
             return resolve({ channel, proof });
           });
         });
@@ -153,13 +155,17 @@ class DalaWallet extends EventEmitter {
       headers['x-api-key'] = self.apiKey;
       request(`${self.baseUrl}/${path}`, { headers, method, body }, (error, response, body) => {
         if (error) return reject(error);
-        console.log('statusCode', response.statusCode);
+        console.log('1.body', body);
+        console.log('1.statusCode', response.statusCode);
         if (response.statusCode === 402) {
           return self
             .setupChannel(params)
             .then(({ channel, proof }) => {
+              console.log('have setup channel');
               return self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']).then(proof => {
+                console.log('have incremented balance and signed');
                 self.uraiden.confirmPayment(proof);
+                console.log('have confirmed payment');
                 headers = Object.assign({}, headers, {
                   'RDN-Contract-Address': config[self.network].contractAddress,
                   'RDN-Receiver-Address': self.receiver,
@@ -170,6 +176,8 @@ class DalaWallet extends EventEmitter {
                   'RDN-Sender-Balance': proof.balance.toString(),
                   'RDN-Price': response.headers['rdn-price']
                 });
+                console.log('created headers', headers);
+                console.log('calling post() again');
                 return self.post.call(self, path, params, {
                   channel,
                   proof,
@@ -177,7 +185,10 @@ class DalaWallet extends EventEmitter {
                 });
               });
             })
-            .then(resolve)
+            .then(result=>{
+              console.log('last resolve has been called');
+              return resolve(result);
+            })
             .catch(error => {
               const errorString = error.toString();
               if (errorString.startsWith('Error: Insuficient funds:')) {
@@ -192,6 +203,7 @@ class DalaWallet extends EventEmitter {
               return reject(error);
             });
         } else {
+          console.log('in else');
           if (response.statusCode >= 300) {
             return reject(body);
           }
