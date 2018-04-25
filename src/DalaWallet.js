@@ -162,7 +162,10 @@ class DalaWallet extends EventEmitter {
             .setupChannel(params)
             .then(({ channel, proof }) => {
               console.log('have setup channel');
+              console.log('self.uraiden.incrementBalanceAndSign', self.uraiden.incrementBalanceAndSign);
+              console.log('rdn-price', response.headers['rdn-price']);
               return self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']).then(proof => {
+                console.log('have incrementBalanceAndSignProof', proof);
                 return { channel, proof };
               });
             })
@@ -181,10 +184,10 @@ class DalaWallet extends EventEmitter {
                 'RDN-Price': response.headers['rdn-price']
               });
               console.log('created headers', headers);
-              console.log('calling post() again');
               return { channel, proof, headers };
             })
             .then(({ channel, proof, headers }) => {
+              console.log('calling post() again');
               return self.post.call(self, path, params, {
                 channel,
                 proof,
