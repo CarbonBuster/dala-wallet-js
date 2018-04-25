@@ -157,43 +157,39 @@ class DalaWallet extends EventEmitter {
           return self
             .setupChannel(params)
             .then(({ channel, proof }) => {
-              self.uraiden
-                .incrementBalanceAndSign(response.headers['rdn-price'])
-                .then(proof => {
-                  self.uraiden.confirmPayment(proof);
-                  headers = Object.assign({}, headers, {
-                    'RDN-Contract-Address': config[self.network].contractAddress,
-                    'RDN-Receiver-Address': self.receiver,
-                    'RDN-Sender-Address': self.sender,
-                    'RDN-Balance-Signature': proof.sig,
-                    'RDN-Open-Block': channel.block.toString(),
-                    'RDN-Balance': proof.balance.toString(),
-                    'RDN-Sender-Balance': proof.balance.toString(),
-                    'RDN-Price': response.headers['rdn-price']
-                  });
-                  return resolve(
-                    self.post.call(self, path, params, {
-                      channel,
-                      proof,
-                      headers
-                    })
-                  );
-                })
-                .catch(error => {
-                  const errorString = error.toString();
-                  if (errorString.startsWith('Error: Insuficient funds:')) {
-                    if (!self.autoTopupEnabled) return reject(error);
-                    return self.uraiden.topUpChannel(self.autoTopupAmount).then(() => {
-                      return self.post.call(self, path, params, {
-                        channel,
-                        proof
-                      });
-                    });
-                  }
-                  return reject(error);
+              self.uraiden.incrementBalanceAndSign(response.headers['rdn-price']).then(proof => {
+                self.uraiden.confirmPayment(proof);
+                headers = Object.assign({}, headers, {
+                  'RDN-Contract-Address': config[self.network].contractAddress,
+                  'RDN-Receiver-Address': self.receiver,
+                  'RDN-Sender-Address': self.sender,
+                  'RDN-Balance-Signature': proof.sig,
+                  'RDN-Open-Block': channel.block.toString(),
+                  'RDN-Balance': proof.balance.toString(),
+                  'RDN-Sender-Balance': proof.balance.toString(),
+                  'RDN-Price': response.headers['rdn-price']
                 });
+                return self.post.call(self, path, params, {
+                  channel,
+                  proof,
+                  headers
+                });
+              });
             })
-            .catch(reject);
+            .then(resolve)
+            .catch(error => {
+              const errorString = error.toString();
+              if (errorString.startsWith('Error: Insuficient funds:')) {
+                if (!self.autoTopupEnabled) return reject(error);
+                return self.uraiden.topUpChannel(self.autoTopupAmount).then(() => {
+                  return self.post.call(self, path, params, {
+                    channel,
+                    proof
+                  });
+                });
+              }
+              return reject(error);
+            });
         } else {
           if (response.statusCode >= 300) {
             return reject(body);
