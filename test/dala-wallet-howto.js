@@ -44,34 +44,78 @@ const wallet = new DalaWallet({
 // }).catch(error=>{
 //     console.log('error', error);
 // });
-const payload = {
-  body: secret.accounts.walaRewards
-};
-console.log(payload);
-wallet
-  .authenticate(payload)
+// const payload = {
+//   body: secret.accounts.walaRewards
+// };
+// console.log(payload);
+// wallet
+//   .authenticate(payload)
+//   .then(result => {
+//     console.log('authenticated');
+//     const { IdToken } = result;
+//     return wallet.createWallet({
+//       authorization: IdToken,
+//       body: {
+//         from: secret.accounts.walaPooled.address
+//       }
+//     });
+//     // const params = {
+//     //   authorization: IdToken,
+//     //   body: {
+//     //       from: secret.accounts.walaPooled.address,
+//     //       to: '0xe807b31ac4399925cb4529f514533abafbd6bfb1',//secret.accounts.walaPooled.address,
+//     //       amount: '135.135135',
+//     //       description: 'Apr-23 Deposit'
+//     //   }
+//     // };
+//     // return wallet.internalTransfer(params);
+//   })
+//   .then(result=>{
+//     console.log('========= DONE ==========');
+//     console.log(result);
+//   })
+//   .catch(console.log);
+
+create
   .then(result => {
-    console.log('authenticated');
-    const { IdToken } = result;
-    return wallet.createWallet({
-      authorization: IdToken,
-      body: {
-        from: secret.accounts.walaPooled.address
-      }
-    });
-    // const params = {
-    //   authorization: IdToken,
-    //   body: {
-    //       from: secret.accounts.walaPooled.address,
-    //       to: '0xe807b31ac4399925cb4529f514533abafbd6bfb1',//secret.accounts.walaPooled.address,
-    //       amount: '135.135135',
-    //       description: 'Apr-23 Deposit'
-    //   }
-    // };
-    // return wallet.internalTransfer(params);
+    console.log('created', result);
   })
-  .then(result=>{
-    console.log('========= DONE ==========');
-    console.log(result);
-  })
-  .catch(console.log);
+  .catch(error => {
+    console.log(error);
+  });
+
+function createWallet() {
+  return wallet;
+}
+
+function createCredentials(){
+  return Promise.resolve(secret.accounts.walaRewards);
+}
+
+function create() {
+  console.log('create()');
+  wallet = createWallet(account.accountProvider.name);
+  console.log('created wallet');
+  return createCredentials(user)
+    .then(authenticate)
+    .then(createOnChainWallet);
+}
+
+function authenticate(credentials) {
+  console.log('authenticate()');
+  return wallet.authenticate({
+    body: {
+      username: credentials.username,
+      password: credentials.password
+    }
+  });
+}
+
+function createOnChainWallet(authResult) {
+  console.log('authenticated', authResult);
+  const { IdToken } = authResult;
+
+  return wallet.createWallet({
+    authorization: IdToken
+  });
+}
