@@ -10,7 +10,7 @@ if (typeof localStorage === 'undefined' || localStorage === null) {
   localStorage = new LocalStorage('./scratch');
 }
 console.log('creating ');
-const wallet = new DalaWallet({
+let wallet = new DalaWallet({
   rpcServer: secret.rpcServer,
   sender: secret.sender,
   network: process.env.STAGE || 'sandbox',
@@ -76,7 +76,7 @@ const wallet = new DalaWallet({
 //   })
 //   .catch(console.log);
 
-create
+create()
   .then(result => {
     console.log('created', result);
   })
@@ -94,9 +94,9 @@ function createCredentials(){
 
 function create() {
   console.log('create()');
-  wallet = createWallet(account.accountProvider.name);
+  wallet = createWallet();
   console.log('created wallet');
-  return createCredentials(user)
+  return createCredentials()
     .then(authenticate)
     .then(createOnChainWallet);
 }
