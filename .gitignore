@@ -60,3 +60,11 @@ typings/
 #secrets
 secret.js
 scratch/*
+test/dala-wallet-howto.js
+
+test/issue_rewards.sh
+
+test/issue-rewards.js
+
+test/script.sh
+test/dala-wallet-playground.js

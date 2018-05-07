@@ -143,6 +143,20 @@ class DalaWallet extends EventEmitter {
     }
   }
 
+  get(path, params) {
+    let self = this;
+    let headers = {};
+    headers['content-type'] = 'application/json';
+    headers['Authorization'] = params.authorization;
+    headers['x-api-key'] = self.apiKey;
+    return new Promise((resolve, reject) => {
+      request(`${self.baseUrl}/${path}`, { headers }, (error, response, body) => {
+        if (error) return reject(error);
+        return resolve(body);
+      });
+    });
+  }
+
   post(path, params, { channel, proof, headers }) {
     try {
       console.log('POST');
@@ -263,6 +277,17 @@ class DalaWallet extends EventEmitter {
   authenticate(params) {
     var self = this;
     return self.post('v1/authentications', params, {});
+  }
+
+  /**
+   * Get an account by address
+   * @param {Object} params
+   * @param {string} params.address The address
+   * @param {string} params.authorization
+   */
+  getAccount(params) {
+    var self = this;
+    return self.get(`v1/accounts/${params.address}`, params, {});
   }
 
   /**
