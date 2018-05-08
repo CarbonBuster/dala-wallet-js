@@ -1,6 +1,6 @@
 {
   "name": "dala-wallet-js",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "main": "index.js",
   "repository": "https://github.com/GetDala/dala-wallet-js.git",
   "author": "Ross McEwan <ross@getwala.com>",
