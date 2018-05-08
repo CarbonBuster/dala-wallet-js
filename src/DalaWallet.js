@@ -152,7 +152,7 @@ class DalaWallet extends EventEmitter {
     return new Promise((resolve, reject) => {
       request(`${self.baseUrl}/${path}`, { headers }, (error, response, body) => {
         if (error) return reject(error);
-        return resolve(body);
+        return resolve(JSON.parse(body));
       });
     });
   }
