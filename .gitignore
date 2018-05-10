@@ -68,3 +68,7 @@ test/issue-rewards.js
 
 test/script.sh
 test/dala-wallet-playground.js
+
+test/create-account.js
+
+test/send-to-new-rewards.js
