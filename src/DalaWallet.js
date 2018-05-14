@@ -126,8 +126,6 @@ class DalaWallet extends EventEmitter {
         const opts = { headers: { 'x-api-key': self.apiKey }, json: true };
         request(`${self.baseUrl}/api/1/channels/${self.sender}/${channel.block}`, opts, (error, response, body) => {
           if (error) return reject(error);
-          console.log('2.body', body);
-          console.log('2.statusCode', response.statusCode);
           if (response.statusCode >= 300) {
             return reject(new Error(`${response.statusCode}: ${response.statusMessage}`));
           }
@@ -173,8 +171,6 @@ class DalaWallet extends EventEmitter {
         headers['x-api-key'] = self.apiKey;
         request(`${self.baseUrl}/${path}`, { headers, method, body }, (error, response, body) => {
           if (error) return reject(error);
-          console.log('1.body', body);
-          console.log('1.statusCode', response.statusCode);
           if (response.statusCode === 402) {
             return self
               .setupChannel(params)
@@ -291,6 +287,11 @@ class DalaWallet extends EventEmitter {
   getAccount(params) {
     var self = this;
     return self.get(`v1/accounts/${params.address}`, params, {});
+  }
+
+  getTransactionCount(params){
+    var self = this;
+    return self.get(`v1/transactions/${params.address}/count`, params, {});
   }
 
   /**
