@@ -60,15 +60,4 @@ typings/
 #secrets
 secret.js
 scratch/*
-test/dala-wallet-howto.js
-
-test/issue_rewards.sh
-
-test/issue-rewards.js
-
-test/script.sh
-test/dala-wallet-playground.js
-
-test/create-account.js
-
-test/send-to-new-rewards.js
+test/**

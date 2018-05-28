@@ -234,6 +234,8 @@ class DalaWallet extends EventEmitter {
               });
           } else {
             console.log('in else');
+            console.log('response.statusCode', response.statusCode);
+            console.log('body', body);
             if (response.statusCode >= 300) {
               return reject(body);
             }
@@ -302,7 +304,10 @@ class DalaWallet extends EventEmitter {
   createWallet(params) {
     console.log('create wallet');
     var self = this;
-    return self.post('v1/wallets', params, {});
+    return self.post('v1/wallets', params, {}).then(result=>{
+      console.log('createWallet.result', result);
+      return result;
+    });
   }
 
   internalTransfer(params) {
