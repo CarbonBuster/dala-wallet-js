@@ -298,7 +298,7 @@ class DalaWallet extends EventEmitter {
 
   getTransactions(params){
     var self = this;
-    return self.get(`v1/transcations/${params.address}`, params, {});
+    return self.get(`v1/transactions/${params.address}`, params, {});
   }
 
   /**
