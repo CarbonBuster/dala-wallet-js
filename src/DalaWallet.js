@@ -296,6 +296,11 @@ class DalaWallet extends EventEmitter {
     return self.get(`v1/transactions/${params.address}/count`, params, {});
   }
 
+  getTransactions(params){
+    var self = this;
+    return self.get(`v1/transcations/${params.address}`, params, {});
+  }
+
   /**
    * Create a wallet
    * @param {Object} params
